@@ -228,3 +228,83 @@ const popUpCloseBtn = imagePopup.querySelector(".popup__close");
 popUpCloseBtn.addEventListener("click", function () {
   closeModal(imagePopup);
 });
+
+const formProfile = document.getElementById("edit-profile-form");
+const formNewcard = document.getElementById("new-card-form");
+
+function setupValidation(form) {
+  const inputs = form.querySelectorAll(".popup__input");
+  const submitButton = form.querySelector(".button.popup__button");
+
+  const showInputError = (inputElement, errorMessage) => {
+    const errorElement = form.querySelector(`.${inputElement.id}-error`);
+    inputElement.classList.add("popup__input_type_error");
+    errorElement.textContent = errorMessage;
+    errorElement.classList.add("popup__error_visible");
+  };
+
+  const hideInputError = (inputElement) => {
+    const errorElement = form.querySelector(`.${inputElement.id}-error`);
+    inputElement.classList.remove("popup__input_type_error");
+    errorElement.textContent = "";
+    errorElement.classList.remove("popup__error_visible");
+  };
+
+  function toggleButtonState(form, submitButton) {
+    // 1. Evaluamos si el formulario NO es válido
+    const isInvalid = !form.checkValidity();
+
+    // 2. Modificamos la propiedad nativa del botón
+    submitButton.disabled = isInvalid;
+
+    // 3. Si isInvalid es true, añade la clase. Si es false, la quita.
+    submitButton.classList.toggle("popup__button_disabled", isInvalid);
+  }
+
+  inputs.forEach((input) => {
+    input.addEventListener("input", () => {
+      if (!input.validity.valid) {
+        showInputError(input, input.validationMessage);
+      } else {
+        hideInputError(input);
+      }
+      toggleButtonState(form, submitButton);
+    });
+  });
+
+  form.addEventListener("submit", (event) => {
+    let formValid = true;
+
+    inputs.forEach((input) => {
+      if (!input.validity.valid) {
+        showInputError(input, input.validationMessage);
+        formValid = false;
+      }
+    });
+
+    if (!formValid) {
+      event.preventDefault();
+    }
+  });
+}
+
+setupValidation(formProfile);
+setupValidation(formNewcard);
+
+function setupClosePopupByOverlay(modal) {
+  modal.addEventListener("click", function (event) {
+    if (event.target === event.currentTarget) {
+      closeModal(modal);
+    }
+  });
+}
+
+setupClosePopupByOverlay(modalPopup);
+setupClosePopupByOverlay(cardPopup);
+
+document.addEventListener("keydown", function (event) {
+  const whichPopupIsOpened = document.querySelector(".popup_is-opened");
+  if (event.key === "Escape") {
+    closeModal(whichPopupIsOpened);
+  }
+});
