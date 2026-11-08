@@ -40,10 +40,12 @@ const modalCloseBtn = modalPopup.querySelector(".popup__close");
 
 function openModal(modal) {
   modal.classList.add("popup_is-opened");
+  document.addEventListener("keydown", handleEscClose);
 }
 
 function closeModal(modal) {
   modal.classList.remove("popup_is-opened");
+  document.removeEventListener("keydown", handleEscClose);
 }
 
 function fillProfileForm() {
@@ -111,10 +113,7 @@ const cardTemplate = document
   .querySelector("#cards-template")
   .content.querySelector(".card");
 
-function getCardElement(
-  name = "Sin título",
-  link = "./images/placeholder.jpg",
-) {
+function getCardElement(name, link) {
   // 1. Selecciona el elemento template de tu HTML (usando su ID o clase)
   // y clona su contenido (content) de forma profunda (true).
   const cardTemplate = document.querySelector("#cards-template").content;
@@ -216,6 +215,9 @@ cardCloseBtn.addEventListener("click", () => {
 
 cardAddBtn.addEventListener("click", () => {
   openModal(cardPopup);
+  formCard.reset();
+  cardCreateBtn.classList.add("popup__button_disabled");
+  cardCreateBtn.disabled = true;
 });
 
 formCard.addEventListener("submit", handleCardFormSubmit);
@@ -229,67 +231,7 @@ popUpCloseBtn.addEventListener("click", function () {
   closeModal(imagePopup);
 });
 
-const formProfile = document.getElementById("edit-profile-form");
-const formNewcard = document.getElementById("new-card-form");
-
-function setupValidation(form) {
-  const inputs = form.querySelectorAll(".popup__input");
-  const submitButton = form.querySelector(".button.popup__button");
-
-  const showInputError = (inputElement, errorMessage) => {
-    const errorElement = form.querySelector(`.${inputElement.id}-error`);
-    inputElement.classList.add("popup__input_type_error");
-    errorElement.textContent = errorMessage;
-    errorElement.classList.add("popup__error_visible");
-  };
-
-  const hideInputError = (inputElement) => {
-    const errorElement = form.querySelector(`.${inputElement.id}-error`);
-    inputElement.classList.remove("popup__input_type_error");
-    errorElement.textContent = "";
-    errorElement.classList.remove("popup__error_visible");
-  };
-
-  function toggleButtonState(form, submitButton) {
-    // 1. Evaluamos si el formulario NO es válido
-    const isInvalid = !form.checkValidity();
-
-    // 2. Modificamos la propiedad nativa del botón
-    submitButton.disabled = isInvalid;
-
-    // 3. Si isInvalid es true, añade la clase. Si es false, la quita.
-    submitButton.classList.toggle("popup__button_disabled", isInvalid);
-  }
-
-  inputs.forEach((input) => {
-    input.addEventListener("input", () => {
-      if (!input.validity.valid) {
-        showInputError(input, input.validationMessage);
-      } else {
-        hideInputError(input);
-      }
-      toggleButtonState(form, submitButton);
-    });
-  });
-
-  form.addEventListener("submit", (event) => {
-    let formValid = true;
-
-    inputs.forEach((input) => {
-      if (!input.validity.valid) {
-        showInputError(input, input.validationMessage);
-        formValid = false;
-      }
-    });
-
-    if (!formValid) {
-      event.preventDefault();
-    }
-  });
-}
-
-setupValidation(formProfile);
-setupValidation(formNewcard);
+enableValidation(validationConfig);
 
 function setupClosePopupByOverlay(modal) {
   modal.addEventListener("click", function (event) {
@@ -301,10 +243,11 @@ function setupClosePopupByOverlay(modal) {
 
 setupClosePopupByOverlay(modalPopup);
 setupClosePopupByOverlay(cardPopup);
+setupClosePopupByOverlay(imagePopup);
 
-document.addEventListener("keydown", function (event) {
+function handleEscClose(event) {
   const whichPopupIsOpened = document.querySelector(".popup_is-opened");
   if (event.key === "Escape") {
     closeModal(whichPopupIsOpened);
   }
-});
+}
