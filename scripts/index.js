@@ -1,3 +1,10 @@
+import Card from "./card.js";
+import FormValidator from "./FormValidator.js";
+import { openModal } from "./utils.js";
+import { closeModal } from "./utils.js";
+import { handleEscClose } from "./utils.js";
+import { setupClosePopupByOverlay } from "./utils.js";
+
 let initialCards = [
   {
     name: "Valle de Yosemite",
@@ -37,16 +44,6 @@ initialCards.forEach(function (initialCard) {
 const editProfileBtn = document.querySelector(".profile__edit-button");
 const modalPopup = document.querySelector("#edit-popup");
 const modalCloseBtn = modalPopup.querySelector(".popup__close");
-
-function openModal(modal) {
-  modal.classList.add("popup_is-opened");
-  document.addEventListener("keydown", handleEscClose);
-}
-
-function closeModal(modal) {
-  modal.classList.remove("popup_is-opened");
-  document.removeEventListener("keydown", handleEscClose);
-}
 
 function fillProfileForm() {
   nameInput.value = profileTitle.textContent;
@@ -113,61 +110,15 @@ const cardTemplate = document
   .querySelector("#cards-template")
   .content.querySelector(".card");
 
-function getCardElement(name, link) {
-  // 1. Selecciona el elemento template de tu HTML (usando su ID o clase)
-  // y clona su contenido (content) de forma profunda (true).
-  const cardTemplate = document.querySelector("#cards-template").content;
-  const cardElement = cardTemplate.cloneNode(true);
+function renderCard(name, link, cardsContainer, templateSelector) {
+  // 1. Crea una nueva instancia de la clase Card
+  const card = new Card(name, link, templateSelector);
 
-  // 2. Selecciona los elementos title e image dentro del clon.
-  // Nota: Ajusta las clases (".card__image", ".card__title") según tu HTML real.
-  const cardImage = cardElement.querySelector(".card__image");
-  const cardTitle = cardElement.querySelector(".card__title");
-  const cardDeleteButton = cardElement.querySelector(".card__delete-button");
-  const cardLikeButton = cardElement.querySelector(".card__like-button");
-  const card = cardElement.querySelector(".card");
+  // 2. Genera el elemento HTML llamando a su método público
+  const cardElement = card.generateCard();
 
-  cardDeleteButton.addEventListener("click", function () {
-    card.remove();
-  });
-
-  cardLikeButton.addEventListener("click", function () {
-    // 1. Apuntas al elemento: cardLikeButton
-    // 2. Accedes a su lista de clases: .classList
-    // 3. Usas el método: .toggle()
-    // 4. Pasas la clase real entre comillas: "card__like-button_is-active"
-    cardLikeButton.classList.toggle("card__like-button_is-active");
-  });
-
-  cardImage.addEventListener("click", function () {
-    // 1. Asigna el enlace de la tarjeta a la propiedad src de la imagen del popup
-    popUpImage.src = link;
-
-    // 2. Asigna el nombre como texto alternativo (alt) por accesibilidad
-    popUpImage.alt = name;
-
-    // 3. Asigna el nombre de la tarjeta al texto del pie de foto (caption) del popup
-    popUpCaption.textContent = name;
-
-    // 4. Finalmente, abres el modal ahora que ya tiene la información correcta
-    openModal(imagePopup);
-  });
-
-  // 3. Asigna el valor del parámetro link a la propiedad src de la imagen.
-  cardImage.src = link;
-
-  // 4. Asigna el valor del parámetro name a la propiedad alt de la imagen.
-  cardImage.alt = name;
-
-  // 5. Asigna el valor del parámetro name a la propiedad textContent del título.
-  cardTitle.textContent = name;
-
-  // 6. Devuelve el elemento de la tarjeta clonado y modificado.
-  return card;
-}
-
-function renderCard(name, link, cardsContainer) {
-  cardsContainer.prepend(getCardElement(name, link));
+  // 3. Agrega la tarjeta al contenedor
+  cardsContainer.prepend(cardElement);
 }
 
 // Asegúrate de tener seleccionado tu contenedor del DOM
@@ -176,7 +127,7 @@ const cardsContainer = document.querySelector(".cards__list"); // Usa la clase r
 // El bucle forEach recorre cada objeto (cardData) del array initialCards
 initialCards.forEach((cardData) => {
   // Llamamos a renderCard pasando el nombre, el enlace y el contenedor
-  renderCard(cardData.name, cardData.link, cardsContainer);
+  renderCard(cardData.name, cardData.link, cardsContainer, "#cards-template");
 });
 
 const cardPopup = document.querySelector("#new-card-popup");
@@ -202,7 +153,7 @@ function handleCardFormSubmit(evt) {
 
   // 2. Llamamos a renderCard con los valores del formulario y tu contenedor
   // Nota: Asegúrate de tener la variable 'cardsContainer' declarada globalmente en tu archivo.
-  renderCard(name, link, cardsContainer);
+  renderCard(name, link, cardsContainer, "#cards-template");
 
   // 3. (Opcional pero recomendado) Cierra el popup y limpia el formulario
   closeModal(cardPopup);
@@ -231,23 +182,23 @@ popUpCloseBtn.addEventListener("click", function () {
   closeModal(imagePopup);
 });
 
-enableValidation(validationConfig);
+const validationConfig = {
+  inputSelector: ".popup__input",
+  submitButtonSelector: ".button.popup__button",
+  inputTypeError: "popup__input_type_error",
+  errorClassVisible: "popup__error_visible",
+  inactiveButtonClass: "popup__button_disabled",
+  formSelector: ".popup__form",
+};
 
-function setupClosePopupByOverlay(modal) {
-  modal.addEventListener("click", function (event) {
-    if (event.target === event.currentTarget) {
-      closeModal(modal);
-    }
-  });
-}
+const formList = document.querySelectorAll(validationConfig.formSelector);
+
+// 4. Recorre cada formulario, crea su validador y actívalo
+formList.forEach((formElement) => {
+  const validator = new FormValidator(validationConfig, formElement);
+  validator.enableValidation();
+});
 
 setupClosePopupByOverlay(modalPopup);
 setupClosePopupByOverlay(cardPopup);
 setupClosePopupByOverlay(imagePopup);
-
-function handleEscClose(event) {
-  const whichPopupIsOpened = document.querySelector(".popup_is-opened");
-  if (event.key === "Escape") {
-    closeModal(whichPopupIsOpened);
-  }
-}
